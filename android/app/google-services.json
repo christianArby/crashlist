@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "882700225573",
+    "firebase_url": "https://crashlist-6a66c.firebaseio.com",
+    "project_id": "crashlist-6a66c",
+    "storage_bucket": "crashlist-6a66c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:882700225573:android:85e4259cb9bf130f4243cc",
+        "android_client_info": {
+          "package_name": "com.otto.crashlist"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "882700225573-37tk2nih75u7q22mg2f1iogppagoo7bi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhEIdJWGwyEj5cY8HpZS2N4kNdR02zZ3I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "882700225573-37tk2nih75u7q22mg2f1iogppagoo7bi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
