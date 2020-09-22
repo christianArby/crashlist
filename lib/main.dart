@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
+import 'package:collection/collection.dart';
 
 void main() => runApp(MyApp());
 
@@ -26,35 +27,59 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
 
   List<String> orderArray = [];
+  List<String> currentOrderArray = [];
+
+  List<DocumentSnapshot> snapshotPlaylist = [];
 
   @override
   Widget build(BuildContext context) {
+    getCurrentPlaylistOrder();
+
     return Scaffold(
       appBar: AppBar(title: Text('Crashlist')),
       body: _buildBody(context),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: Firestore.instance.collection('playlistOrder').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return LinearProgressIndicator();
-        orderArray = List.from(snapshot.data.documents.first['currentPlaylist']);
+  final databaseReference = Firestore.instance;
 
-        return StreamBuilder<QuerySnapshot>(
-          stream: Firestore.instance.collection('playlistTest').snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return LinearProgressIndicator();
-            List<DocumentSnapshot> snapshotPlaylist = [];
-            for (String orderId in orderArray) {
-              snapshotPlaylist.add(snapshot.data.documents.firstWhere((element) => element.documentID==orderId));
-            }
-            return _buildList(context, snapshotPlaylist);
-          },
-        );
-      },
-    );
+  getCurrentPlaylistOrder() async {
+    DocumentSnapshot snapshot = await databaseReference
+        .collection("playlistOrder")
+        .document("order")
+        .get();
+    // use this DocumentSnapshot snapshot to get the current data that is there in the document inside of your collection.
+    orderArray = List.from(snapshot['currentPlaylist']);
+    print(orderArray); // to check whats actually there and if its working...
+
+    Function eq = const ListEquality().equals;
+    if (!eq(currentOrderArray, orderArray)) {
+      getCurrentPlaylist();
+    }
+    //lets assume newPostsList is the data that you want to put in this referenced document.
+  }
+
+  getCurrentPlaylist() async {
+    QuerySnapshot snapshot = await databaseReference
+        .collection("playlistTest").getDocuments();
+    // use this DocumentSnapshot snapshot to get the current data that is there in the document inside of your collection.
+    snapshotPlaylist = List();
+    for (String orderId in orderArray) {
+      snapshotPlaylist.add(snapshot.documents.firstWhere((element) => element.documentID==orderId));
+    }
+    print(snapshotPlaylist); // to check whats actually there and if its working...
+
+    Function eq = const ListEquality().equals;
+    if (!eq(currentOrderArray, orderArray)) {
+      setState(() {
+        currentOrderArray = orderArray;
+      });
+    }
+    //lets assume newPostsList is the data that you want to put in this referenced document.
+  }
+
+  Widget _buildBody(BuildContext context) {
+    return _buildList(context, snapshotPlaylist);
   }
 
   Future<String> getAuthenticationToken() async {
@@ -76,13 +101,43 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildList(BuildContext context, List<DocumentSnapshot> snapshot) {
     return ReorderableListView(
-      onReorder: (oldIndex, newIndex) {
-        _updatePlaylistOrder(oldIndex, newIndex);
-      },
-
+      onReorder: _updatePlaylistOrder,
       padding: const EdgeInsets.only(top: 20.0),
       children: snapshot.map((data) => _buildListItem(context, data)).toList(),
     );
+  }
+
+  var dumList = ["hej", "sdsa", "sadasd"];
+
+  Widget _dumList(BuildContext context, List<DocumentSnapshot> snapshot) {
+
+
+
+    return ReorderableListView(
+      onReorder: onReorder,
+
+      padding: const EdgeInsets.only(top: 20.0),
+      children: [
+        for (final item in dumList)
+          ListTile(
+            key: ValueKey(item),
+            title: Text(item)
+          )
+      ],
+    );
+  }
+
+  void onReorder(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    setState(() {
+      String game = dumList[oldIndex];
+
+      dumList.removeAt(oldIndex);
+      dumList.insert(newIndex, game);
+    });
   }
 
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
@@ -106,26 +161,32 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _updatePlaylistOrder(int oldIndex, int newIndex) {
-    var movedId = orderArray[oldIndex];
-    if (newIndex>orderArray.length-1) {
-      orderArray.removeAt(oldIndex);
-      print(orderArray);
-      orderArray.add(movedId);
-      print(orderArray);
-    } else {
-      orderArray.removeAt(oldIndex);
-      print(orderArray);
-      orderArray.insert(newIndex, movedId);
-      print(orderArray);
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
     }
+
+    var movedId = orderArray[oldIndex];
+
+    orderArray.removeAt(oldIndex);
+    orderArray.insert(newIndex, movedId);
+
+    currentOrderArray = orderArray;
 
     Firestore.instance.collection('playlistOrder')
         .document('order')
         .updateData({'currentPlaylist': orderArray})
         .then((value) => print("User Updated"))
-        .catchError((error) => print("Failed to update user: $error"));;
+        .catchError((error) => print("Failed to update user: $error"));
+
+    setState(() {
+      DocumentSnapshot movedSnap = snapshotPlaylist[oldIndex];
+
+      snapshotPlaylist.removeAt(oldIndex);
+      snapshotPlaylist.insert(newIndex, movedSnap);
+    });
   }
 }
+
 
 class Record {
   final String artist;
