@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:spotify_sdk/spotify_sdk.dart';
 
 void main() => runApp(MyApp());
 
@@ -52,6 +55,23 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       },
     );
+  }
+
+  Future<String> getAuthenticationToken() async {
+    try {
+      var authenticationToken = await SpotifySdk.getAuthenticationToken(
+          clientId: DotEnv().env['CLIENT_ID'].toString(),
+          redirectUrl: DotEnv().env['REDIRECT_URL'].toString(),
+          scope: 'app-remote-control, '
+              'user-modify-playback-state, '
+              'playlist-read-private, '
+              'playlist-modify-public,user-read-currently-playing');
+      return authenticationToken;
+    } on PlatformException catch (e) {
+      return Future.error('$e.code: $e.message');
+    } on MissingPluginException {
+      return Future.error('not implemented');
+    }
   }
 
   Widget _buildList(BuildContext context, List<DocumentSnapshot> snapshot) {
