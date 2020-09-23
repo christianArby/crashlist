@@ -1,9 +1,15 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crashlist/MyPlaylists.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
 import 'package:collection/collection.dart';
+import 'package:http/http.dart' as http;
+
+import 'SecondRoute.dart';
 
 Future<void> main() async {
   await DotEnv().load('.env');
@@ -36,10 +42,20 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
+  Future<MyPlaylists> futureAlbum;
+
+  @override
+  void initState() {
+    super.initState();
+    futureAlbum = fetchAlbum();
+  }
+
   List<String> orderArray = [];
   List<String> currentOrderArray = [];
 
   List<DocumentSnapshot> snapshotPlaylist = [];
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -146,11 +162,26 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         child: ListTile(
           title: Text(record.artist),
-          trailing: Text(record.title),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => SecondRoute()),
+          trailing: FutureBuilder<MyPlaylists>(
+            future: futureAlbum,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Text(snapshot.data.playlistNames.first);
+              } else if (snapshot.hasError) {
+                return Text("${snapshot.error}");
+              }
+
+              // By default, show a loading spinner.
+              return CircularProgressIndicator();
+            },
           ),
+          onTap: () => {
+          print(futureAlbum),
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => SecondRoute()),
+            )
+          } ,
         ),
       ),
     );
@@ -202,7 +233,12 @@ class Record {
   String toString() => "Record<$artist:$title>";
 }
 
-class SecondRoute extends StatelessWidget {
+/*class SecondRoute extends StatelessWidget {
+
+  final authToken = getAuthenticationToken();
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,7 +255,7 @@ class SecondRoute extends StatelessWidget {
       ),
     );
   }
-}
+}*/
 
 Future<void> connectToSpotifyRemote() async {
   try {
@@ -247,3 +283,20 @@ Future<String> getAuthenticationToken() async {
     return Future.error('not implemented');
   }
 }
+
+Future<MyPlaylists> fetchAlbum() async {
+  final response = await http.get('https://us-central1-crashlist-6a66c.cloudfunctions.net/testSpotify2');
+
+  if (response.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    return MyPlaylists.fromJson(json.decode(response.body));
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    throw Exception('Failed to load album');
+  }
+}
+
+
+
