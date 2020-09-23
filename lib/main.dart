@@ -5,15 +5,25 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
 import 'package:collection/collection.dart';
 
-void main() => runApp(MyApp());
+Future<void> main() async {
+  await DotEnv().load('.env');
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Crashlist',
-      home: MyHomePage(),
+      home: FirstRoute(),
     );
+  }
+}
+
+class FirstRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MyHomePage();
   }
 }
 
@@ -82,23 +92,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return _buildList(context, snapshotPlaylist);
   }
 
-  Future<String> getAuthenticationToken() async {
-    try {
-      var authenticationToken = await SpotifySdk.getAuthenticationToken(
-          clientId: DotEnv().env['CLIENT_ID'].toString(),
-          redirectUrl: DotEnv().env['REDIRECT_URL'].toString(),
-          scope: 'app-remote-control, '
-              'user-modify-playback-state, '
-              'playlist-read-private, '
-              'playlist-modify-public,user-read-currently-playing');
-      return authenticationToken;
-    } on PlatformException catch (e) {
-      return Future.error('$e.code: $e.message');
-    } on MissingPluginException {
-      return Future.error('not implemented');
-    }
-  }
-
   Widget _buildList(BuildContext context, List<DocumentSnapshot> snapshot) {
     return ReorderableListView(
       onReorder: _updatePlaylistOrder,
@@ -154,7 +147,10 @@ class _MyHomePageState extends State<MyHomePage> {
         child: ListTile(
           title: Text(record.artist),
           trailing: Text(record.title),
-          onTap: () => print(record),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SecondRoute()),
+          ),
         ),
       ),
     );
@@ -204,4 +200,50 @@ class Record {
 
   @override
   String toString() => "Record<$artist:$title>";
+}
+
+class SecondRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Second Route"),
+      ),
+      body: Center(
+        child: RaisedButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Go back!'),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> connectToSpotifyRemote() async {
+  try {
+    var result = await SpotifySdk.connectToSpotifyRemote(
+        clientId: DotEnv().env['CLIENT_ID'].toString(),
+        redirectUrl: DotEnv().env['REDIRECT_URL'].toString());
+  } on PlatformException catch (e) {
+  } on MissingPluginException {
+  }
+}
+
+Future<String> getAuthenticationToken() async {
+  try {
+    var authenticationToken = await SpotifySdk.getAuthenticationToken(
+        clientId: DotEnv().env['CLIENT_ID'].toString(),
+        redirectUrl: DotEnv().env['REDIRECT_URL'].toString(),
+        scope: 'app-remote-control, '
+            'user-modify-playback-state, '
+            'playlist-read-private, '
+            'playlist-modify-public,user-read-currently-playing');
+    return authenticationToken;
+  } on PlatformException catch (e) {
+    return Future.error('$e.code: $e.message');
+  } on MissingPluginException {
+    return Future.error('not implemented');
+  }
 }
