@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crashlist/ThirdRoute.dart';
+import 'package:crashlist/Playlist.dart';
+import 'package:crashlist/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -10,42 +11,57 @@ import 'package:spotify_sdk/spotify_sdk.dart';
 import 'PlaylistMinimal.dart';
 import 'package:http/http.dart' as http;
 
-class SecondRoute extends StatelessWidget {
+class ThirdRoute extends StatelessWidget {
+  final String playlistId;
+
+  ThirdRoute(this.playlistId);
+
   @override
   Widget build(BuildContext context) {
-    return MyPlaylistsPage();
+    return MySinglePlaylistPage(playlistId);
   }
 }
 
-class MyPlaylistsPage extends StatefulWidget {
+class MySinglePlaylistPage extends StatefulWidget {
+
+  final String playlistId;
+
+  MySinglePlaylistPage(this.playlistId);
+
+
   @override
-  _MyPlaylistsPage createState() {
-    return _MyPlaylistsPage();
+  _MySinglePlaylistPage createState() {
+    return _MySinglePlaylistPage(playlistId);
   }
 }
 
-class _MyPlaylistsPage extends State<MyPlaylistsPage> {
+class _MySinglePlaylistPage extends State<MySinglePlaylistPage> {
 
-  Future<List<PlaylistMinimal>> futureMyPlaylists;
+  final String playlistId;
+
+  _MySinglePlaylistPage(this.playlistId);
+
+
+  Future<List<Track>> futureTracks;
 
   @override
   void initState() {
     super.initState();
     getAuthenticationToken().then((String value) {
       setState(() {
-        futureMyPlaylists = fetchMyPlaylists(value);
+        futureTracks = fetchMySinglePlaylist(value, playlistId);
       });
     },
-    onError: (e) {
+        onError: (e) {
 
-    });
+        });
   }
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
-      appBar: AppBar(title: Text('My Playlists')),
+      appBar: AppBar(title: Text('My Single Playlist')),
       body: _buildBody(context),
     );
   }
@@ -55,8 +71,8 @@ class _MyPlaylistsPage extends State<MyPlaylistsPage> {
   }
 
   Widget _buildList(BuildContext context) {
-    return FutureBuilder<List<PlaylistMinimal>>(
-      future: futureMyPlaylists,
+    return FutureBuilder<List<Track>>(
+      future: futureTracks,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return ListView(
@@ -72,7 +88,7 @@ class _MyPlaylistsPage extends State<MyPlaylistsPage> {
     );
   }
 
-  Widget _buildListItem(BuildContext context, PlaylistMinimal data) {
+  Widget _buildListItem(BuildContext context, Track data) {
 
     return Padding(
       key: ValueKey(data),
@@ -87,7 +103,7 @@ class _MyPlaylistsPage extends State<MyPlaylistsPage> {
           trailing: Text(data.name),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => ThirdRoute(data.playlistId)),
+            MaterialPageRoute(builder: (context) => FirstRoute()),
           ),
         ),
       ),
@@ -95,24 +111,24 @@ class _MyPlaylistsPage extends State<MyPlaylistsPage> {
   }
 }
 
-Future<List<PlaylistMinimal>> fetchMyPlaylists(String authToken) async {
+Future<List<Track>> fetchMySinglePlaylist(String authToken, String playlistId) async {
 
   var queryParameters = {
     'authToken': authToken.toString(),
-    'param2': 'two',
+    'playlistId': playlistId,
   };
 
   var uri =
-  Uri.https('us-central1-crashlist-6a66c.cloudfunctions.net', '/myPlaylists', queryParameters);
+  Uri.https('us-central1-crashlist-6a66c.cloudfunctions.net', '/tracks', queryParameters);
 
   final response = await http.get(uri);
 
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    List<PlaylistMinimal> list = List();
+    List<Track> list = List();
     list = (json.decode(response.body) as List)
-        .map((data) => new PlaylistMinimal.fromJson(data))
+        .map((data) => new Track.fromJson(data))
         .toList();
     return list;
   } else {
