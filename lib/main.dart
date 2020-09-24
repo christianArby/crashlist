@@ -41,6 +41,12 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
+  @override
+  void initState() {
+    super.initState();
+    getCurrentPlaylistOrder();
+  }
+
 
   List<String> orderArray = [];
   List<String> currentOrderArray = [];
@@ -51,7 +57,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    getCurrentPlaylistOrder();
 
     return Scaffold(
       appBar: AppBar(title: Text('Crashlist')),
@@ -75,6 +80,24 @@ class _MyHomePageState extends State<MyHomePage> {
       getCurrentPlaylist();
     }
     //lets assume newPostsList is the data that you want to put in this referenced document.
+
+    //TODO Streambuilder som en widget så att allt uppdateras hela tiden
+
+    /*StreamBuilder<DocumentSnapshot>(
+      stream: Firestore.instance.collection('playlistOrder').document("order").snapshots(),
+      builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+
+        if (!snapshot.hasData) return new Text('Loading...');
+        return new ListView(
+          children: snapshot.data.documents.map((DocumentSnapshot document) {
+            return new ListTile(
+              title: new Text(document['title']),
+              subtitle: new Text(document['author']),
+            );
+          }).toList(),
+        );
+      },
+    );*/
   }
 
   getCurrentPlaylist() async {

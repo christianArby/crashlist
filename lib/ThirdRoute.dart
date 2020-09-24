@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crashlist/Playlist.dart';
 import 'package:crashlist/main.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +44,8 @@ class _MySinglePlaylistPage extends State<MySinglePlaylistPage> {
 
 
   Future<List<Track>> futureTracks;
+
+  bool _isChecked = false;
 
   @override
   void initState() {
@@ -98,16 +101,29 @@ class _MySinglePlaylistPage extends State<MySinglePlaylistPage> {
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(5.0),
         ),
-        child: ListTile(
+        child: CheckboxListTile(
           title: Text(data.name),
-          trailing: Text(data.name),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => FirstRoute()),
-          ),
+          value: _isChecked,
+          onChanged: (bool value) {
+            saveTrackToDatabase(data.trackId, data.name);
+            setState(() {
+              _isChecked = value;
+            });
+          },
         ),
       ),
     );
+  }
+
+  void saveTrackToDatabase(String trackId, String trackName) {
+    Firestore.instance.collection('playlistTest').document(trackId).setData({
+      'artist': trackName,
+      'title': trackName
+    }).then((value) => print("Track Updated")).catchError((error) => print("Failed to update track: $error"));
+
+    Firestore.instance.collection('playlistOrder').document('order').updateData({'currentPlaylist': FieldValue.arrayUnion([trackId])}).then((value) => print("Track Updated")).catchError((error) => print("Failed to update track: $error"));
+
+
   }
 }
 

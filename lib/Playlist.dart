@@ -17,7 +17,7 @@ class Track {
   factory Track.fromJson(Map<String, dynamic> json) {
     return new Track._(
       name: json['name'],
-      trackId: json['trackId'],
+      trackId: json['id'],
     );
   }
 }
