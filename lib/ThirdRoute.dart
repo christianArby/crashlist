@@ -121,7 +121,10 @@ class _MySinglePlaylistPage extends State<MySinglePlaylistPage> {
       'title': trackName
     }).then((value) => print("Track Updated")).catchError((error) => print("Failed to update track: $error"));
 
-    Firestore.instance.collection('playlistOrder').document('order').updateData({'currentPlaylist': FieldValue.arrayUnion([trackId])}).then((value) => print("Track Updated")).catchError((error) => print("Failed to update track: $error"));
+    Firestore.instance.collection('playlistOrder').document('order')
+        .updateData({'currentPlaylist': FieldValue.arrayUnion([trackId])})
+        .then((value) => print("Track Updated"))
+        .catchError((error) => print("Failed to update track: $error"));
 
 
   }

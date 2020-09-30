@@ -41,12 +41,6 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-  @override
-  void initState() {
-    super.initState();
-    getCurrentPlaylistOrder();
-  }
-
 
   List<String> orderArray = [];
   List<String> currentOrderArray = [];
@@ -66,41 +60,41 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final databaseReference = Firestore.instance;
 
-  getCurrentPlaylistOrder() async {
-    DocumentSnapshot snapshot = await databaseReference
-        .collection("playlistOrder")
-        .document("order")
-        .get();
+  removeTrackFromPlaylist(DocumentSnapshot snapshot) {
+    var record = Record.fromSnapshot(snapshot);
+    orderArray.remove(record.reference.documentID);
+    currentOrderArray.remove(record.reference.documentID);
+    snapshotPlaylist.remove(snapshot);
+
+
+    Firestore.instance.collection('playlistOrder').document('order')
+        .updateData({'currentPlaylist': FieldValue.arrayRemove([record.reference.documentID])})
+        .then((value) => print("Track deleted"))
+        .catchError((error) => print("Failed to delete track: $error"));
+
+    Firestore.instance.collection('playlistTest').document(record.reference.documentID).delete()
+        .then((value) => print("Track deleted"))
+        .catchError((error) => print("Failed to delete track: $error"));
+
+  }
+
+  getCurrentPlaylistOrder(DocumentSnapshot snapshot) async {
     // use this DocumentSnapshot snapshot to get the current data that is there in the document inside of your collection.
     orderArray = List.from(snapshot['currentPlaylist']);
     print(orderArray); // to check whats actually there and if its working...
 
     Function eq = const ListEquality().equals;
-    if (!eq(currentOrderArray, orderArray)) {
+    if (!eq(currentOrderArray, orderArray) || orderArray.length!=snapshotPlaylist.length) {
       getCurrentPlaylist();
     }
     //lets assume newPostsList is the data that you want to put in this referenced document.
 
     //TODO Streambuilder som en widget så att allt uppdateras hela tiden
-
-    /*StreamBuilder<DocumentSnapshot>(
-      stream: Firestore.instance.collection('playlistOrder').document("order").snapshots(),
-      builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-
-        if (!snapshot.hasData) return new Text('Loading...');
-        return new ListView(
-          children: snapshot.data.documents.map((DocumentSnapshot document) {
-            return new ListTile(
-              title: new Text(document['title']),
-              subtitle: new Text(document['author']),
-            );
-          }).toList(),
-        );
-      },
-    );*/
   }
 
   getCurrentPlaylist() async {
+    Function eq = const ListEquality().equals;
+    if (!eq(currentOrderArray, orderArray) || orderArray.length!=snapshotPlaylist.length) {
     QuerySnapshot snapshot = await databaseReference
         .collection("playlistTest").getDocuments();
     // use this DocumentSnapshot snapshot to get the current data that is there in the document inside of your collection.
@@ -110,8 +104,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     print(snapshotPlaylist); // to check whats actually there and if its working...
 
-    Function eq = const ListEquality().equals;
-    if (!eq(currentOrderArray, orderArray)) {
       setState(() {
         currentOrderArray = orderArray;
       });
@@ -120,7 +112,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildBody(BuildContext context) {
-    return _buildList(context, snapshotPlaylist);
+    return StreamBuilder<DocumentSnapshot>(
+      stream: Firestore.instance.collection('playlistOrder').document("order").snapshots(),
+      builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+        if (!snapshot.hasData) return new Text('Loading...');
+        getCurrentPlaylistOrder(snapshot.data);
+        return _buildList(context, snapshotPlaylist);
+      },
+    );
   }
 
   Widget _buildList(BuildContext context, List<DocumentSnapshot> snapshot) {
@@ -131,59 +130,32 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  var dumList = ["hej", "sdsa", "sadasd"];
-
-  Widget _dumList(BuildContext context, List<DocumentSnapshot> snapshot) {
-
-
-
-    return ReorderableListView(
-      onReorder: onReorder,
-
-      padding: const EdgeInsets.only(top: 20.0),
-      children: [
-        for (final item in dumList)
-          ListTile(
-            key: ValueKey(item),
-            title: Text(item)
-          )
-      ],
-    );
-  }
-
-  void onReorder(int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) {
-      newIndex -= 1;
-    }
-
-    setState(() {
-      String game = dumList[oldIndex];
-
-      dumList.removeAt(oldIndex);
-      dumList.insert(newIndex, game);
-    });
-  }
-
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     final record = Record.fromSnapshot(data);
-
-    return Padding(
-      key: ValueKey(record.artist),
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(5.0),
-        ),
-        child: ListTile(
-          title: Text(record.artist),
-          trailing: Text(record.title),
-          onTap: () => {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => SecondRoute()),
-            )
-          } ,
+    return Dismissible(
+      key: Key(record.artist),
+      onDismissed: (direction) {
+        // Remove the item from the data source.
+        removeTrackFromPlaylist(data);
+      },
+      child: Padding(
+        key: ValueKey(record.artist),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(5.0),
+          ),
+          child: ListTile(
+            title: Text(record.artist),
+            trailing: Text(record.title),
+            onTap: () => {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SecondRoute()),
+              )
+            },
+          ),
         ),
       ),
     );
@@ -234,30 +206,6 @@ class Record {
   @override
   String toString() => "Record<$artist:$title>";
 }
-
-/*class SecondRoute extends StatelessWidget {
-
-  final authToken = getAuthenticationToken();
-
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Second Route"),
-      ),
-      body: Center(
-        child: RaisedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Go back!'),
-        ),
-      ),
-    );
-  }
-}*/
 
 Future<void> connectToSpotifyRemote() async {
   try {
