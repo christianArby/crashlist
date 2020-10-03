@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crashlist/firebase_bloc_provider.dart';
+import 'package:crashlist/firebase_playlist.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -8,7 +10,8 @@ import 'package:spotify_sdk/spotify_sdk.dart';
 import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
 
-import 'SecondRoute.dart';
+import 'firebase_bloc.dart';
+import 'second_route.dart';
 
 Future<void> main() async {
   await DotEnv().load('.env');
@@ -16,11 +19,17 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
+  final bloc = FirebaseBloc();
+
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Crashlist',
-      home: FirstRoute(),
+      home: FirebaseBlocProvider(
+        bloc: bloc,
+        child: FirstRoute(),
+      ),
     );
   }
 }
@@ -40,14 +49,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
+  bool _firstTimeLoad = true;
 
   List<String> orderArray = [];
   List<String> currentOrderArray = [];
-
   List<DocumentSnapshot> snapshotPlaylist = [];
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +84,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
 
-  getCurrentPlaylistOrder(DocumentSnapshot snapshot) async {
+  /*getCurrentPlaylistOrder(DocumentSnapshot snapshot) async {
     // use this DocumentSnapshot snapshot to get the current data that is there in the document inside of your collection.
     orderArray = List.from(snapshot['currentPlaylist']);
     print(orderArray); // to check whats actually there and if its working...
@@ -109,24 +115,34 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
     //lets assume newPostsList is the data that you want to put in this referenced document.
-  }
+  }*/
 
   Widget _buildBody(BuildContext context) {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: Firestore.instance.collection('playlistOrder').document("order").snapshots(),
-      builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-        if (!snapshot.hasData) return new Text('Loading...');
-        getCurrentPlaylistOrder(snapshot.data);
-        return _buildList(context, snapshotPlaylist);
+    FirebaseBloc bloc = FirebaseBlocProvider.of(context).bloc;
+
+    if (_firstTimeLoad) {
+      bloc.fetchCurrentPlaylist();
+      _firstTimeLoad = false;
+    }
+
+
+    return StreamBuilder<FirebaseBlocState>(
+
+
+      initialData: bloc.getCurrentState(),
+      stream: bloc.firebaseStream,
+      builder: (BuildContext context, AsyncSnapshot<FirebaseBlocState> snapshot) {
+        if (snapshot.data.loading) return new Text('Loading...');
+        return _buildList(context, snapshot.data.firebasePlaylist);
       },
     );
   }
 
-  Widget _buildList(BuildContext context, List<DocumentSnapshot> snapshot) {
+  Widget _buildList(BuildContext context, FirebasePlaylist firebasePlaylist) {
     return ReorderableListView(
       onReorder: _updatePlaylistOrder,
       padding: const EdgeInsets.only(top: 20.0),
-      children: snapshot.map((data) => _buildListItem(context, data)).toList(),
+      children: firebasePlaylist.snapshotPlaylist.map((data) => _buildListItem(context, data)).toList(),
     );
   }
 

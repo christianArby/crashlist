@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:crashlist/Playlist.dart';
+import 'package:crashlist/playlist.dart';
 import 'package:crashlist/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
 
-import 'PlaylistMinimal.dart';
+import 'playlist_minimal.dart';
 import 'package:http/http.dart' as http;
 
 class ThirdRoute extends StatelessWidget {
