@@ -1,30 +1,22 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:crashlist/third_route.dart';
+import 'package:crashlist/playlist_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:spotify_sdk/spotify_sdk.dart';
 
 import 'playlist_minimal.dart';
-import 'package:http/http.dart' as http;
 
-class SecondRoute extends StatelessWidget {
+class PlaylistsScreen extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MyPlaylistsPage();
+  _PlaylistsScreenState createState() {
+    return _PlaylistsScreenState();
   }
 }
 
-class MyPlaylistsPage extends StatefulWidget {
-  @override
-  _MyPlaylistsPage createState() {
-    return _MyPlaylistsPage();
-  }
-}
-
-class _MyPlaylistsPage extends State<MyPlaylistsPage> {
+class _PlaylistsScreenState extends State<PlaylistsScreen> {
 
   Future<List<PlaylistMinimal>> futureMyPlaylists;
 
@@ -87,7 +79,7 @@ class _MyPlaylistsPage extends State<MyPlaylistsPage> {
           trailing: Text(data.name),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => ThirdRoute(data.playlistId)),
+            MaterialPageRoute(builder: (context) => PlaylistScreen(data.playlistId)),
           ),
         ),
       ),

@@ -1,49 +1,32 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crashlist/playlist.dart';
-import 'package:crashlist/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:spotify_sdk/spotify_sdk.dart';
 
-import 'playlist_minimal.dart';
-import 'package:http/http.dart' as http;
-
-class ThirdRoute extends StatelessWidget {
-  final String playlistId;
-
-  ThirdRoute(this.playlistId);
-
-  @override
-  Widget build(BuildContext context) {
-    return MySinglePlaylistPage(playlistId);
-  }
-}
-
-class MySinglePlaylistPage extends StatefulWidget {
+class PlaylistScreen extends StatefulWidget {
 
   final String playlistId;
-
-  MySinglePlaylistPage(this.playlistId);
+  PlaylistScreen(this.playlistId);
 
 
   @override
-  _MySinglePlaylistPage createState() {
-    return _MySinglePlaylistPage(playlistId);
+  _PlaylistScreenState createState() {
+    return _PlaylistScreenState(playlistId);
   }
 }
 
-class _MySinglePlaylistPage extends State<MySinglePlaylistPage> {
+class _PlaylistScreenState extends State<PlaylistScreen> {
 
   final String playlistId;
 
-  _MySinglePlaylistPage(this.playlistId);
+  _PlaylistScreenState(this.playlistId);
 
-
-  Future<List<Track>> futureTracks;
+  Future<List<SpotifyTrack>> futureTracks;
 
   bool _isChecked = false;
 
@@ -74,7 +57,7 @@ class _MySinglePlaylistPage extends State<MySinglePlaylistPage> {
   }
 
   Widget _buildList(BuildContext context) {
-    return FutureBuilder<List<Track>>(
+    return FutureBuilder<List<SpotifyTrack>>(
       future: futureTracks,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
@@ -91,7 +74,7 @@ class _MySinglePlaylistPage extends State<MySinglePlaylistPage> {
     );
   }
 
-  Widget _buildListItem(BuildContext context, Track data) {
+  Widget _buildListItem(BuildContext context, SpotifyTrack data) {
 
     return Padding(
       key: ValueKey(data),
@@ -130,7 +113,7 @@ class _MySinglePlaylistPage extends State<MySinglePlaylistPage> {
   }
 }
 
-Future<List<Track>> fetchMySinglePlaylist(String authToken, String playlistId) async {
+Future<List<SpotifyTrack>> fetchMySinglePlaylist(String authToken, String playlistId) async {
 
   var queryParameters = {
     'authToken': authToken.toString(),
@@ -145,9 +128,9 @@ Future<List<Track>> fetchMySinglePlaylist(String authToken, String playlistId) a
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    List<Track> list = List();
+    List<SpotifyTrack> list = List();
     list = (json.decode(response.body) as List)
-        .map((data) => new Track.fromJson(data))
+        .map((data) => new SpotifyTrack.fromJson(data))
         .toList();
     return list;
   } else {
