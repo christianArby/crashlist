@@ -2,12 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:crashlist/playlist.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:spotify_sdk/spotify_sdk.dart';
 
 import 'firebase_bloc.dart';
 import 'firebase_bloc_provider.dart';
 import 'firebase_playlist.dart';
-import 'playlists_screen.dart';
 
 class CrashlistScreen extends StatefulWidget {
   @override
@@ -39,6 +41,7 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
     FirebaseBloc bloc = FirebaseBlocProvider.of(context).bloc;
 
     if (_firstTimeLoad) {
+      connectToSpotifyRemote();
       bloc.fetchCurrentPlaylist();
       _firstTimeLoad = false;
     }
@@ -67,15 +70,15 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
 
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     FirebaseBloc bloc = FirebaseBlocProvider.of(context).bloc;
-    final record = Record.fromSnapshot(data);
+    final spotifyTrack = SpotifyTrack.fromSnapshot(data);
     return Dismissible(
-      key: Key(record.artist),
+      key: Key(spotifyTrack.name),
       onDismissed: (direction) {
         // Remove the item from the data source.
         bloc.removeTrackFromPlaylist(data);
       },
       child: Padding(
-        key: ValueKey(record.artist),
+        key: ValueKey(spotifyTrack.name),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Container(
           decoration: BoxDecoration(
@@ -83,18 +86,25 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
             borderRadius: BorderRadius.circular(5.0),
           ),
           child: ListTile(
-            title: Text(record.artist.substring(0, 5)),
-            trailing: Text(record.title.substring(0,5)),
+            title: Text(spotifyTrack.name.substring(0, 5)),
+            trailing: Text(spotifyTrack.name.substring(0,5)),
             onTap: () => {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => PlaylistsScreen()),
-              )
+              play(spotifyTrack.uri)
             },
           ),
         ),
       ),
     );
+  }
+
+  Future<void> play(String spotifyTrackUri) async {
+    try {
+      await SpotifySdk.play(spotifyUri: spotifyTrackUri);
+    } on PlatformException catch (e) {
+      //setStatus(e.code, message: e.message);
+    } on MissingPluginException {
+      //setStatus('not implemented');
+    }
   }
 
   void _updatePlaylistOrder(int oldIndex, int newIndex) {
@@ -117,5 +127,19 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
       firebasePlaylist.snapshotPlaylist.removeAt(oldIndex);
       firebasePlaylist.snapshotPlaylist.insert(newIndex, movedSnap);
     });
+  }
+}
+
+Future<void> connectToSpotifyRemote() async {
+  try {
+
+    await SpotifySdk.connectToSpotifyRemote(
+        clientId: DotEnv().env['CLIENT_ID'].toString(),
+        redirectUrl: DotEnv().env['REDIRECT_URL'].toString());
+
+  } on PlatformException catch (e) {
+
+  } on MissingPluginException {
+
   }
 }

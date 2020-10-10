@@ -13,31 +13,36 @@ class Playlist {
 }
 
 class SpotifyTrack {
+  final String id;
   final String name;
-  final String trackId;
-  SpotifyTrack._({this.name, this.trackId});
+  final String uri;
+  final DocumentReference reference;
+  SpotifyTrack._({this.id, this.name, this.uri, this.reference});
   factory SpotifyTrack.fromJson(Map<String, dynamic> json) {
     return new SpotifyTrack._(
+      id: json['id'],
       name: json['name'],
-      trackId: json['id'],
+      uri: json['uri'],
+      reference: null,
     );
   }
-}
 
-class Record {
-  final String artist;
-  final String title;
-  final DocumentReference reference;
+  Map<String, dynamic> toJson() =>
+      {
+        'id': id,
+        'name': name,
+        'uri': uri
+      };
 
-  Record.fromMap(Map<String, dynamic> map, {this.reference})
-      : assert(map['artist'] != null),
-        assert(map['title'] != null),
-        artist = map['artist'],
-        title = map['title'];
 
-  Record.fromSnapshot(DocumentSnapshot snapshot)
+  SpotifyTrack.fromMap(Map<String, dynamic> map, {this.reference})
+      : assert(map['id'] != null),
+        assert(map['name'] != null),
+        assert(map['uri'] != null),
+        id = map['id'],
+        name = map['name'],
+        uri = map['uri'];
+
+  SpotifyTrack.fromSnapshot(DocumentSnapshot snapshot)
       : this.fromMap(snapshot.data, reference: snapshot.reference);
-
-  @override
-  String toString() => "Record<$artist:$title>";
 }

@@ -88,7 +88,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
           title: Text(data.name),
           value: _isChecked,
           onChanged: (bool value) {
-            saveTrackToDatabase(data.trackId, data.name);
+            saveTrackToDatabase(data);
             setState(() {
               _isChecked = value;
             });
@@ -98,18 +98,14 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
     );
   }
 
-  void saveTrackToDatabase(String trackId, String trackName) {
-    Firestore.instance.collection('playlistTest').document(trackId).setData({
-      'artist': trackName,
-      'title': trackName
-    }).then((value) => print("Track Updated")).catchError((error) => print("Failed to update track: $error"));
+  void saveTrackToDatabase(SpotifyTrack spotifyTrack) {
+    Firestore.instance.collection('playlistTest').document(spotifyTrack.id).setData(spotifyTrack.toJson())
+        .then((value) => print("Track Updated")).catchError((error) => print("Failed to update track: $error"));
 
     Firestore.instance.collection('playlistOrder').document('order')
-        .updateData({'currentPlaylist': FieldValue.arrayUnion([trackId])})
+        .updateData({'currentPlaylist': FieldValue.arrayUnion([spotifyTrack.id])})
         .then((value) => print("Track Updated"))
         .catchError((error) => print("Failed to update track: $error"));
-
-
   }
 }
 

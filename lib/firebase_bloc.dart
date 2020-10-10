@@ -71,15 +71,15 @@ class FirebaseBloc {
   }
 
   removeTrackFromPlaylist(DocumentSnapshot snapshot) {
-    var record = Record.fromSnapshot(snapshot);
+    var spotifyTrack = SpotifyTrack.fromSnapshot(snapshot);
 
 
     Firestore.instance.collection('playlistOrder').document('order')
-        .updateData({'currentPlaylist': FieldValue.arrayRemove([record.reference.documentID])})
+        .updateData({'currentPlaylist': FieldValue.arrayRemove([spotifyTrack.reference.documentID])})
         .then((value) => print("Track deleted"))
         .catchError((error) => print("Failed to delete track: $error"));
 
-    Firestore.instance.collection('playlistTest').document(record.reference.documentID).delete()
+    Firestore.instance.collection('playlistTest').document(spotifyTrack.reference.documentID).delete()
         .then((value) => print("Track deleted"))
         .catchError((error) => print("Failed to delete track: $error"));
 
