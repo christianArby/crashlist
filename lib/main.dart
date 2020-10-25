@@ -17,11 +17,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Crashlist',
-      home: FirebaseBlocProvider(
-        bloc: bloc,
-        child: BottomBar(),
+    return FirebaseBlocProvider(
+      bloc: bloc,
+      child: MaterialApp(
+        title: 'Crashlist',
+        home: BottomBar(),
       ),
     );
   }

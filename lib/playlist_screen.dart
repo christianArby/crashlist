@@ -8,6 +8,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:spotify_sdk/spotify_sdk.dart';
 
+import 'firebase_bloc.dart';
+import 'firebase_bloc_provider.dart';
+
 class PlaylistScreen extends StatefulWidget {
 
   final String playlistId;
@@ -30,11 +33,16 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
 
   bool _isChecked = false;
 
+  List<SpotifyTrack> tracksToBeWritten = List.empty(growable: true);
+
+  var currentAuthToken = "";
+
   @override
   void initState() {
     super.initState();
     getAuthenticationToken().then((String value) {
       setState(() {
+        currentAuthToken = value;
         futureTracks = fetchMySinglePlaylist(value, playlistId);
       });
     },
@@ -74,10 +82,12 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
     );
   }
 
-  Widget _buildListItem(BuildContext context, SpotifyTrack data) {
+  Widget _buildListItem(BuildContext context, SpotifyTrack spotifyTrack) {
+
+    FirebaseBloc bloc = FirebaseBlocProvider.of(context).bloc;
 
     return Padding(
-      key: ValueKey(data),
+      key: ValueKey(spotifyTrack),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Container(
         decoration: BoxDecoration(
@@ -85,10 +95,12 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
           borderRadius: BorderRadius.circular(5.0),
         ),
         child: CheckboxListTile(
-          title: Text(data.name),
+          title: Text(spotifyTrack.name),
           value: _isChecked,
           onChanged: (bool value) {
-            saveTrackToDatabase(data);
+            spotifyTrack.tempAuth = currentAuthToken;
+            bloc.addTrackToQueue(AddTrackData('40znmRYsotw673C5LD4rrz', spotifyTrack));
+            //queueTrackToDatabase(data, currentAuthToken);
             setState(() {
               _isChecked = value;
             });
@@ -96,16 +108,6 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         ),
       ),
     );
-  }
-
-  void saveTrackToDatabase(SpotifyTrack spotifyTrack) {
-    Firestore.instance.collection('playlistTest').document(spotifyTrack.id).setData(spotifyTrack.toJson())
-        .then((value) => print("Track Updated")).catchError((error) => print("Failed to update track: $error"));
-
-    Firestore.instance.collection('playlistOrder').document('order')
-        .updateData({'currentPlaylist': FieldValue.arrayUnion([spotifyTrack.id])})
-        .then((value) => print("Track Updated"))
-        .catchError((error) => print("Failed to update track: $error"));
   }
 }
 

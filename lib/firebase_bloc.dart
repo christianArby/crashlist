@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crashlist/firebase_api_client.dart';
 import 'package:crashlist/firebase_playlist.dart';
 import 'package:crashlist/playlist.dart';
+import 'package:http/http.dart' as http;
 
 class FirebaseBloc {
   final _apiClient = FirebaseAPIClient();
@@ -13,6 +15,7 @@ class FirebaseBloc {
   StreamSubscription<FirebasePlaylist> _fetchFirebasePlaylistSub;
 
   List<String> orderArray;
+  List<AddTrackData> tracksToBeAddedToSpotify = List.empty(growable: true);
   QuerySnapshot querySnapshot;
   FirebasePlaylist firebasePlaylist;
 
@@ -27,24 +30,26 @@ class FirebaseBloc {
     return _currentState;
   }
 
+  resetQueue() {
+    tracksToBeAddedToSpotify = List.empty(growable: true);
+  }
+
   fetchCurrentPlaylist() {
     _fetchFirebasePlaylistSub?.cancel();
-
     _currentState.loading = true;
     _firebaseController.add(_currentState);
 
-    Stream<DocumentSnapshot> orderStream = Firestore.instance.collection('playlistOrder').document("order").snapshots();
+    Stream<DocumentSnapshot> orderStream = Firestore.instance.collection('playlists').document("40znmRYsotw673C5LD4rrz").collection('meta').document('order').snapshots();
     orderStream.listen((event) {
-      orderArray = List.from(event.data['currentPlaylist']);
+      orderArray = List.from(event.data['orderArray']);
       updatePlaylist();
     });
 
-    Stream<QuerySnapshot> playlistStream = Firestore.instance.collection("playlistTest").snapshots();
+    Stream<QuerySnapshot> playlistStream = Firestore.instance.collection("playlists").document("40znmRYsotw673C5LD4rrz").collection("tracks").snapshots();
     playlistStream.listen((event) {
       querySnapshot = event;
       updatePlaylist();
     });
-
   }
 
   updatePlaylist() {
@@ -70,16 +75,70 @@ class FirebaseBloc {
     }
   }
 
+  addTrackToQueue(AddTrackData addTrackData) {
+
+    if (tracksToBeAddedToSpotify.isEmpty) {
+      tracksToBeAddedToSpotify.add(addTrackData);
+      addTrackToSpotify(addTrackData);
+    } else {
+      tracksToBeAddedToSpotify.add(addTrackData);
+    }
+
+  }
+
+  addTrackToSpotify(AddTrackData addTrackData) {
+
+    addTrackFuture(addTrackData).then((bool success) {
+
+      if (success) {
+        print("Wohoo");
+        tracksToBeAddedToSpotify.remove(addTrackData);
+        if (tracksToBeAddedToSpotify.isNotEmpty) {
+          addTrackToSpotify(tracksToBeAddedToSpotify.first);
+        }
+      } else {
+        print("Bohoo");
+      }
+    },onError: (e) {
+    });
+
+  }
+
+  Future<bool> addTrackFuture(AddTrackData addTrackData) async {
+    var url ='https://us-central1-crashlist-6a66c.cloudfunctions.net/widgets/addTrackToSpotifyListHttp';
+
+    Map data = addTrackData.spotifyTrack.toJson();
+    //encode Map to JSON
+    var body = json.encode(data);
+
+    var response = await http.post(url,
+        headers: {"Content-Type": "application/json"},
+        body: body
+    );
+    print("${response.statusCode}");
+    print("${response.body}");
+    if (response.statusCode == 200) {
+      // If the server did return a 200 OK response,
+      // then parse the JSON.
+      return true;
+    } else {
+      // If the server did not return a 200 OK response,
+      // then throw an exception.
+      return false;
+      throw Exception('Failed to load album');
+    }
+  }
+
   removeTrackFromPlaylist(DocumentSnapshot snapshot) {
     var spotifyTrack = SpotifyTrack.fromSnapshot(snapshot);
 
 
-    Firestore.instance.collection('playlistOrder').document('order')
-        .updateData({'currentPlaylist': FieldValue.arrayRemove([spotifyTrack.reference.documentID])})
+    Firestore.instance.collection('playlists').document("40znmRYsotw673C5LD4rrz").collection('meta').document('order')
+        .updateData({'orderArray': FieldValue.arrayRemove([spotifyTrack.reference.documentID])})
         .then((value) => print("Track deleted"))
         .catchError((error) => print("Failed to delete track: $error"));
 
-    Firestore.instance.collection('playlistTest').document(spotifyTrack.reference.documentID).delete()
+    Firestore.instance.collection('playlists').document('40znmRYsotw673C5LD4rrz').collection('tracks').document(spotifyTrack.reference.documentID).delete()
         .then((value) => print("Track deleted"))
         .catchError((error) => print("Failed to delete track: $error"));
 
@@ -99,6 +158,13 @@ class FirebaseBloc {
     }
     return equal;
   }
+}
+
+class AddTrackData {
+  String playlistId;
+  SpotifyTrack spotifyTrack;
+
+  AddTrackData(this.playlistId, this.spotifyTrack);
 }
 
 class FirebaseBlocState {

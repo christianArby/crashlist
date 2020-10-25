@@ -20,10 +20,6 @@ class CrashlistScreen extends StatefulWidget {
 
 class _CrashlistScreenState extends State<CrashlistScreen> {
   bool _firstTimeLoad = true;
-
-  /* List<String> orderArray = [];
-  List<String> currentOrderArray = [];
-  List<DocumentSnapshot> snapshotPlaylist = [];*/
   FirebasePlaylist firebasePlaylist;
 
   @override
@@ -43,6 +39,7 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
     if (_firstTimeLoad) {
       connectToSpotifyRemote();
       bloc.fetchCurrentPlaylist();
+      bloc.resetQueue();
       _firstTimeLoad = false;
     }
 
@@ -74,7 +71,6 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
     return Dismissible(
       key: Key(spotifyTrack.name),
       onDismissed: (direction) {
-        // Remove the item from the data source.
         bloc.removeTrackFromPlaylist(data);
       },
       child: Padding(
@@ -86,8 +82,8 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
             borderRadius: BorderRadius.circular(5.0),
           ),
           child: ListTile(
-            title: Text(spotifyTrack.name.substring(0, 5)),
-            trailing: Text(spotifyTrack.name.substring(0,5)),
+            title: Text(spotifyTrack.name.substring(0, 2)),
+            trailing: Text(spotifyTrack.name.substring(0, 2)),
             onTap: () => {
               play(spotifyTrack.uri)
             },
@@ -101,9 +97,9 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
     try {
       await SpotifySdk.play(spotifyUri: spotifyTrackUri);
     } on PlatformException catch (e) {
-      //setStatus(e.code, message: e.message);
+
     } on MissingPluginException {
-      //setStatus('not implemented');
+
     }
   }
 
@@ -116,9 +112,9 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
     firebasePlaylist.orderArray.removeAt(oldIndex);
     firebasePlaylist.orderArray.insert(newIndex, movedId);
 
-    Firestore.instance.collection('playlistOrder')
+    Firestore.instance.collection('playlists').document("40znmRYsotw673C5LD4rrz").collection('meta')
         .document('order')
-        .updateData({'currentPlaylist': firebasePlaylist.orderArray})
+        .updateData({'orderArray': firebasePlaylist.orderArray})
         .then((value) => print("User Updated"))
         .catchError((error) => print("Failed to update user: $error"));
 
