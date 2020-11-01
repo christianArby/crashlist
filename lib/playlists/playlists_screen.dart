@@ -1,4 +1,3 @@
-
 import 'package:crashlist/playlists/playlists_cubit.dart';
 import 'package:crashlist/playlist/playlist_screen.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +21,6 @@ class PlaylistsScreen extends StatelessWidget {
   }
 
   Widget _buildList(BuildContext context) {
-
     return BlocBuilder<PlaylistsCubit, PlaylistsState>(
       builder: (context, state) {
         if (state is PlaylistsInitial) {
@@ -30,12 +28,12 @@ class PlaylistsScreen extends StatelessWidget {
         } else if (state is PlaylistsLoading) {
           return CircularProgressIndicator();
         } else if (state is PlaylistsLoaded) {
-
           return ListView(
             padding: const EdgeInsets.only(top: 20.0),
-            children: state.playlists.playlists.map((data) => _buildListItem(context, data)).toList(),
+            children: state.playlists.playlists
+                .map((data) => _buildListItem(context, data))
+                .toList(),
           );
-
         } else {
           return CircularProgressIndicator();
         }
@@ -44,7 +42,6 @@ class PlaylistsScreen extends StatelessWidget {
   }
 
   Widget _buildListItem(BuildContext context, PlaylistMinimal data) {
-
     return Padding(
       key: ValueKey(data),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -58,11 +55,11 @@ class PlaylistsScreen extends StatelessWidget {
           trailing: Text(data.name),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => PlaylistScreen(data.playlistId)),
+            MaterialPageRoute(
+                builder: (context) => PlaylistScreen(data.playlistId)),
           ),
         ),
       ),
     );
   }
 }
-

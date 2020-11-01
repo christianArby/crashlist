@@ -1,4 +1,5 @@
 import 'package:crashlist/crashlist/crashlist_cubit.dart';
+import 'package:crashlist/edit/edit_cubit.dart';
 import 'package:crashlist/playlists/playlists_cubit.dart';
 import 'package:crashlist/firebase_repository.dart';
 import 'package:crashlist/spotify_repository.dart';
@@ -14,19 +15,15 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
-
-
   @override
   Widget build(BuildContext context) {
+    final firebaseRepository = FirebaseRepository();
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (context) => CrashlistCubit(FirebaseRepository())
-        ),
-        BlocProvider(
-          create: (context) => PlaylistsCubit(SpotifyRepository())
-        ),
+        BlocProvider(create: (context) => CrashlistCubit(firebaseRepository)),
+        BlocProvider(create: (context) => PlaylistsCubit(SpotifyRepository())),
+        BlocProvider(create: (context) => EditCubit(firebaseRepository)),
       ],
       child: MaterialApp(
         title: 'Crashlist',
@@ -35,9 +32,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
-
 
 /// This is the stateful widget that the main application instantiates.
 class BottomBar extends StatefulWidget {
@@ -51,7 +45,7 @@ class BottomBar extends StatefulWidget {
 class _BottomBarState extends State<BottomBar> {
   int _selectedIndex = 0;
   static const TextStyle optionStyle =
-  TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
+      TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
   static List<Widget> _widgetOptions = <Widget>[
     CrashlistScreen(),
     PlaylistsScreen()
@@ -87,5 +81,3 @@ class _BottomBarState extends State<BottomBar> {
     );
   }
 }
-
-
