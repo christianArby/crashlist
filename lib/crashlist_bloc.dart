@@ -144,6 +144,51 @@ class FirebaseBloc {
 
   }
 
+  Future<List<PlaylistMinimal>> fetchMyPlaylists(String authToken) async {
+
+    var queryParameters = {
+      'authToken': authToken.toString(),
+      'param2': 'two',
+    };
+
+    var uri =
+    Uri.https('us-central1-crashlist-6a66c.cloudfunctions.net', '/myPlaylists', queryParameters);
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      // If the server did return a 200 OK response,
+      // then parse the JSON.
+      List<PlaylistMinimal> list = List();
+      list = (json.decode(response.body) as List)
+          .map((data) => new PlaylistMinimal.fromJson(data))
+          .toList();
+      return list;
+    } else {
+      // If the server did not return a 200 OK response,
+      // then throw an exception.
+      throw Exception('Failed to load album');
+    }
+
+  }
+
+  Future<String> getAuthenticationToken() async {
+    try {
+      var authenticationToken = await SpotifySdk.getAuthenticationToken(
+          clientId: DotEnv().env['CLIENT_ID'].toString(),
+          redirectUrl: DotEnv().env['REDIRECT_URL'].toString(),
+          scope: 'app-remote-control, '
+              'user-modify-playback-state, '
+              'playlist-read-private, '
+              'playlist-modify-public,user-read-currently-playing');
+      return authenticationToken;
+    } on PlatformException catch (e) {
+      return Future.error('$e.code: $e.message');
+    } on MissingPluginException {
+      return Future.error('not implemented');
+    }
+  }
+
   bool orderArraysEqual(List<String> oArray1, List<String> oArray2) {
     var equal = true;
     for (var id in oArray1) {
@@ -158,6 +203,10 @@ class FirebaseBloc {
     }
     return equal;
   }
+
+
+
+
 }
 
 class AddTrackData {
