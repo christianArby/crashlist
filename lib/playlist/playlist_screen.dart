@@ -1,43 +1,56 @@
 import 'dart:convert';
-
-import 'package:crashlist/playlist_screen.dart';
+import 'package:crashlist/playlist/playlist.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:spotify_sdk/spotify_sdk.dart';
 
-import 'playlist_minimal.dart';
+class PlaylistScreen extends StatefulWidget {
 
-class PlaylistsScreen extends StatefulWidget {
+  final String playlistId;
+  PlaylistScreen(this.playlistId);
+
+
   @override
-  _PlaylistsScreenState createState() {
-    return _PlaylistsScreenState();
+  _PlaylistScreenState createState() {
+    return _PlaylistScreenState(playlistId);
   }
 }
 
-class _PlaylistsScreenState extends State<PlaylistsScreen> {
+class _PlaylistScreenState extends State<PlaylistScreen> {
 
-  Future<List<PlaylistMinimal>> futureMyPlaylists;
+  final String playlistId;
+
+  _PlaylistScreenState(this.playlistId);
+
+  Future<List<SpotifyTrack>> futureTracks;
+
+  bool _isChecked = false;
+
+  List<SpotifyTrack> tracksToBeWritten = List.empty(growable: true);
+
+  var currentAuthToken = "";
 
   @override
   void initState() {
     super.initState();
     getAuthenticationToken().then((String value) {
       setState(() {
-        futureMyPlaylists = fetchMyPlaylists(value);
+        currentAuthToken = value;
+        futureTracks = fetchMySinglePlaylist(value, playlistId);
       });
     },
-    onError: (e) {
+        onError: (e) {
 
-    });
+        });
   }
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
-      appBar: AppBar(title: Text('My Playlists')),
+      appBar: AppBar(title: Text('My Single Playlist')),
       body: _buildBody(context),
     );
   }
@@ -47,8 +60,8 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
   }
 
   Widget _buildList(BuildContext context) {
-    return FutureBuilder<List<PlaylistMinimal>>(
-      future: futureMyPlaylists,
+    return FutureBuilder<List<SpotifyTrack>>(
+      future: futureTracks,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return ListView(
@@ -64,47 +77,54 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
     );
   }
 
-  Widget _buildListItem(BuildContext context, PlaylistMinimal data) {
+  Widget _buildListItem(BuildContext context, SpotifyTrack spotifyTrack) {
+
+    //CrashlistBloc bloc = FirebaseBlocProvider.of(context).bloc;
 
     return Padding(
-      key: ValueKey(data),
+      key: ValueKey(spotifyTrack),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Container(
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(5.0),
         ),
-        child: ListTile(
-          title: Text(data.name),
-          trailing: Text(data.name),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => PlaylistScreen(data.playlistId)),
-          ),
+        child: CheckboxListTile(
+          title: Text(spotifyTrack.name),
+          value: _isChecked,
+          onChanged: (bool value) {
+            spotifyTrack.tempAuth = currentAuthToken;
+            // TODO
+            //bloc.addTrackToQueue(AddTrackData('40znmRYsotw673C5LD4rrz', spotifyTrack));
+            //queueTrackToDatabase(data, currentAuthToken);
+            setState(() {
+              _isChecked = value;
+            });
+          },
         ),
       ),
     );
   }
 }
 
-Future<List<PlaylistMinimal>> fetchMyPlaylists(String authToken) async {
+Future<List<SpotifyTrack>> fetchMySinglePlaylist(String authToken, String playlistId) async {
 
   var queryParameters = {
     'authToken': authToken.toString(),
-    'param2': 'two',
+    'playlistId': playlistId,
   };
 
   var uri =
-  Uri.https('us-central1-crashlist-6a66c.cloudfunctions.net', '/myPlaylists', queryParameters);
+  Uri.https('us-central1-crashlist-6a66c.cloudfunctions.net', '/tracks', queryParameters);
 
   final response = await http.get(uri);
 
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    List<PlaylistMinimal> list = List();
+    List<SpotifyTrack> list = List();
     list = (json.decode(response.body) as List)
-        .map((data) => new PlaylistMinimal.fromJson(data))
+        .map((data) => new SpotifyTrack.fromJson(data))
         .toList();
     return list;
   } else {
@@ -131,4 +151,3 @@ Future<String> getAuthenticationToken() async {
     return Future.error('not implemented');
   }
 }
-

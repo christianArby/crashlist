@@ -32,6 +32,10 @@ dependencies:
 
   flutter:
     sdk: flutter
+  bloc: ^6.0.0
+  flutter_bloc: ^6.0.0
+  equatable: ^0.6.1
+  async: ^2.4.2
 
 
 

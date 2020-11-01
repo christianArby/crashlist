@@ -1,10 +1,12 @@
-import 'package:crashlist/firebase_bloc_provider.dart';
+import 'package:crashlist/crashlist/crashlist_cubit.dart';
+import 'package:crashlist/playlists/playlists_cubit.dart';
+import 'package:crashlist/firebase_repository.dart';
+import 'package:crashlist/spotify_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-import 'crashlist_screen.dart';
-import 'firebase_bloc.dart';
-import 'playlists_screen.dart';
+import 'crashlist/crashlist_screen.dart';
+import 'playlists/playlists_screen.dart';
 
 Future<void> main() async {
   await DotEnv().load('.env');
@@ -12,13 +14,20 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
-  final bloc = FirebaseBloc();
 
 
   @override
   Widget build(BuildContext context) {
-    return FirebaseBlocProvider(
-      bloc: bloc,
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => CrashlistCubit(FirebaseRepository())
+        ),
+        BlocProvider(
+          create: (context) => PlaylistsCubit(SpotifyRepository())
+        ),
+      ],
       child: MaterialApp(
         title: 'Crashlist',
         home: BottomBar(),
@@ -26,6 +35,8 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
 
 
 /// This is the stateful widget that the main application instantiates.
