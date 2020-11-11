@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Playlist {
@@ -16,27 +18,19 @@ class SpotifyTrack {
   final String id;
   final String name;
   final String uri;
-  var tempAuth;
   final DocumentReference reference;
-  SpotifyTrack._({this.id, this.name, this.uri, this.tempAuth, this.reference});
+  SpotifyTrack._({this.id, this.name, this.uri, this.reference});
   factory SpotifyTrack.fromJson(Map<String, dynamic> json) {
     return new SpotifyTrack._(
       id: json['id'],
       name: json['name'],
       uri: json['uri'],
-      tempAuth: null,
       reference: null,
     );
   }
 
   Map<String, dynamic> toJson() =>
-      {
-        'id': id,
-        'name': name,
-        'uri': uri,
-        'tempAuth': tempAuth
-      };
-
+      {'id': id, 'name': name, 'uri': uri};
 
   SpotifyTrack.fromMap(Map<String, dynamic> map, {this.reference})
       : assert(map['id'] != null),
@@ -44,9 +38,25 @@ class SpotifyTrack {
         assert(map['uri'] != null),
         id = map['id'],
         name = map['name'],
-        uri = map['uri'],
-        tempAuth = null;
+        uri = map['uri'];
 
   SpotifyTrack.fromSnapshot(DocumentSnapshot snapshot)
       : this.fromMap(snapshot.data, reference: snapshot.reference);
+}
+
+class ReplaceTracksData {
+  String tempAuth;
+  List<String> uris;
+  List<String> orderArray;
+  ReplaceTracksData(this.tempAuth, this.uris, this.orderArray);
+
+  Map toJson() {
+    return {
+      'tempAuth': tempAuth,
+      'uris': jsonEncode(uris),
+      'orderArray': jsonEncode(orderArray),
+    };
+  }
+
+
 }

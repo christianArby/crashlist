@@ -2,13 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:crashlist/crashlist/firebase_playlist.dart';
 import 'package:crashlist/edit/edit_cubit.dart';
-import 'package:crashlist/firebase_repository.dart';
 import 'package:crashlist/playlist/playlist.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:spotify_sdk/spotify_sdk.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class EditScreen extends StatefulWidget {
@@ -31,7 +27,7 @@ class _EditScreenState extends State<EditScreen> {
           title: Text('Edit'),
           leading: IconButton(
             icon: Icon(Icons.save),
-            onPressed: () => editCubit.saveEdit(),
+            onPressed: () => editCubit.saveEdit(firebasePlaylist),
           ),
         ),
         body: _buildBody(context));

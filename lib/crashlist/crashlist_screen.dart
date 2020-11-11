@@ -107,7 +107,9 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
   Future<void> play(String spotifyTrackUri) async {
     try {
       await SpotifySdk.play(spotifyUri: spotifyTrackUri);
-    } on PlatformException catch (e) {} on MissingPluginException {}
+    } on MissingPluginException {
+
+    }
   }
 
   void _updatePlaylistOrder(int oldIndex, int newIndex) {
@@ -141,5 +143,5 @@ Future<void> connectToSpotifyRemote() async {
     await SpotifySdk.connectToSpotifyRemote(
         clientId: DotEnv().env['CLIENT_ID'].toString(),
         redirectUrl: DotEnv().env['REDIRECT_URL'].toString());
-  } on PlatformException catch (e) {} on MissingPluginException {}
+  } on PlatformException {} on MissingPluginException {}
 }

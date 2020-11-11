@@ -1,11 +1,11 @@
-import 'package:crashlist/playlists/playlists_cubit.dart';
+import 'package:crashlist/list/list_cubit.dart';
 import 'package:crashlist/playlist/playlist_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'playlist_minimal.dart';
 
-class PlaylistsScreen extends StatelessWidget {
+class ListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -15,19 +15,19 @@ class PlaylistsScreen extends StatelessWidget {
   }
 
   Widget _buildBody(BuildContext context) {
-    final playlistsCubit = context.bloc<PlaylistsCubit>();
+    final playlistsCubit = context.bloc<ListCubit>();
     playlistsCubit.getPlaylists();
     return _buildList(context);
   }
 
   Widget _buildList(BuildContext context) {
-    return BlocBuilder<PlaylistsCubit, PlaylistsState>(
+    return BlocBuilder<ListCubit, ListState>(
       builder: (context, state) {
-        if (state is PlaylistsInitial) {
+        if (state is ListInitial) {
           return CircularProgressIndicator();
-        } else if (state is PlaylistsLoading) {
+        } else if (state is ListLoading) {
           return CircularProgressIndicator();
-        } else if (state is PlaylistsLoaded) {
+        } else if (state is ListLoaded) {
           return ListView(
             padding: const EdgeInsets.only(top: 20.0),
             children: state.playlists.playlists

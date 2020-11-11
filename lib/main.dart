@@ -1,13 +1,14 @@
 import 'package:crashlist/crashlist/crashlist_cubit.dart';
 import 'package:crashlist/edit/edit_cubit.dart';
-import 'package:crashlist/playlists/playlists_cubit.dart';
+import 'package:crashlist/list/list_cubit.dart';
 import 'package:crashlist/firebase_repository.dart';
+import 'package:crashlist/playlist/playlist_cubit.dart';
 import 'package:crashlist/spotify_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'crashlist/crashlist_screen.dart';
-import 'playlists/playlists_screen.dart';
+import 'list/list_screen.dart';
 
 Future<void> main() async {
   await DotEnv().load('.env');
@@ -18,12 +19,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firebaseRepository = FirebaseRepository();
+    final spotifyRepository = SpotifyRepository();
 
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => CrashlistCubit(firebaseRepository)),
-        BlocProvider(create: (context) => PlaylistsCubit(SpotifyRepository())),
-        BlocProvider(create: (context) => EditCubit(firebaseRepository)),
+        BlocProvider(create: (context) => ListCubit(spotifyRepository)),
+        BlocProvider(create: (context) => EditCubit(firebaseRepository, spotifyRepository)),
+        BlocProvider(create: (context) => PlaylistCubit(spotifyRepository)),
       ],
       child: MaterialApp(
         title: 'Crashlist',
@@ -44,11 +47,9 @@ class BottomBar extends StatefulWidget {
 /// This is the private State class that goes with MyStatefulWidget.
 class _BottomBarState extends State<BottomBar> {
   int _selectedIndex = 0;
-  static const TextStyle optionStyle =
-      TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
   static List<Widget> _widgetOptions = <Widget>[
     CrashlistScreen(),
-    PlaylistsScreen()
+    ListScreen()
   ];
 
   void _onItemTapped(int index) {

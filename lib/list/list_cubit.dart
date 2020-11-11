@@ -5,19 +5,19 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'playlists.dart';
 
-part 'playlists_state.dart';
+part 'list_state.dart';
 
-class PlaylistsCubit extends Cubit<PlaylistsState> {
+class ListCubit extends Cubit<ListState> {
   final SpotifyRepository spotifyRepository;
-  PlaylistsCubit(this.spotifyRepository) : super(PlaylistsInitial());
+  ListCubit(this.spotifyRepository) : super(ListInitial());
 
   Future<void> getPlaylists() async {
     try {
-      emit(PlaylistsLoading());
+      emit(ListLoading());
       final playlists = await spotifyRepository.fetchMyPlaylists();
-      emit(PlaylistsLoaded(playlists));
+      emit(ListLoaded(playlists));
     } on Exception {
-      emit(PlaylistsError('Could not load playlists. Is the device online?'));
+      emit(ListError('Could not load playlists. Is the device online?'));
     }
   }
 }

@@ -1,53 +1,19 @@
-import 'dart:convert';
 import 'package:crashlist/playlist/playlist.dart';
+import 'package:crashlist/playlist/playlist_cubit.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
-import 'package:spotify_sdk/spotify_sdk.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class PlaylistScreen extends StatefulWidget {
+import '../spotify_repository.dart';
 
+class PlaylistScreen extends StatelessWidget {
+  
   final String playlistId;
   PlaylistScreen(this.playlistId);
 
-
-  @override
-  _PlaylistScreenState createState() {
-    return _PlaylistScreenState(playlistId);
-  }
-}
-
-class _PlaylistScreenState extends State<PlaylistScreen> {
-
-  final String playlistId;
-
-  _PlaylistScreenState(this.playlistId);
-
-  Future<List<SpotifyTrack>> futureTracks;
-
-  bool _isChecked = false;
-
-  List<SpotifyTrack> tracksToBeWritten = List.empty(growable: true);
-
-  var currentAuthToken = "";
-
-  @override
-  void initState() {
-    super.initState();
-    getAuthenticationToken().then((String value) {
-      setState(() {
-        currentAuthToken = value;
-        futureTracks = fetchMySinglePlaylist(value, playlistId);
-      });
-    },
-        onError: (e) {
-
-        });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final playlistCubit = context.bloc<PlaylistCubit>();
+    playlistCubit.getPlaylist(playlistId);
 
     return Scaffold(
       appBar: AppBar(title: Text('My Single Playlist')),
@@ -60,24 +26,29 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   }
 
   Widget _buildList(BuildContext context) {
-    return FutureBuilder<List<SpotifyTrack>>(
-      future: futureTracks,
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
+
+    return BlocBuilder<PlaylistCubit, PlaylistState>(
+      builder: (context, state) {
+        if (state is PlaylistInitial) {
+          return CircularProgressIndicator();
+        } else if (state is PlaylistLoading) {
+          return CircularProgressIndicator();
+        } else if (state is PlaylistLoaded) {
           return ListView(
             padding: const EdgeInsets.only(top: 20.0),
-            children: snapshot.data.map((data) => _buildListItem(context, data)).toList(),
+            children: state.playlistData.spotifyTracks.map((data) => 
+            _buildListItem(context, data, state.playlistData.tempAuth)).toList(),
           );
-        } else if (snapshot.hasError) {
-          return Text("${snapshot.error}");
+        } else {
+          return CircularProgressIndicator();
         }
-        // By default, show a loading spinner.
-        return CircularProgressIndicator();
       },
     );
   }
 
-  Widget _buildListItem(BuildContext context, SpotifyTrack spotifyTrack) {
+  Widget _buildListItem(BuildContext context, SpotifyTrack spotifyTrack, String tempAuth) {
+
+    final playlistCubit = context.bloc<PlaylistCubit>();
 
     //CrashlistBloc bloc = FirebaseBlocProvider.of(context).bloc;
 
@@ -91,63 +62,12 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         ),
         child: CheckboxListTile(
           title: Text(spotifyTrack.name),
-          value: _isChecked,
+          value: true,
           onChanged: (bool value) {
-            spotifyTrack.tempAuth = currentAuthToken;
-            // TODO
-            //bloc.addTrackToQueue(AddTrackData('40znmRYsotw673C5LD4rrz', spotifyTrack));
-            //queueTrackToDatabase(data, currentAuthToken);
-            setState(() {
-              _isChecked = value;
-            });
+            playlistCubit.addTrackToQueue(AddTrackData('40znmRYsotw673C5LD4rrz', spotifyTrack, tempAuth));
           },
         ),
       ),
     );
-  }
-}
-
-Future<List<SpotifyTrack>> fetchMySinglePlaylist(String authToken, String playlistId) async {
-
-  var queryParameters = {
-    'authToken': authToken.toString(),
-    'playlistId': playlistId,
-  };
-
-  var uri =
-  Uri.https('us-central1-crashlist-6a66c.cloudfunctions.net', '/tracks', queryParameters);
-
-  final response = await http.get(uri);
-
-  if (response.statusCode == 200) {
-    // If the server did return a 200 OK response,
-    // then parse the JSON.
-    List<SpotifyTrack> list = List();
-    list = (json.decode(response.body) as List)
-        .map((data) => new SpotifyTrack.fromJson(data))
-        .toList();
-    return list;
-  } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
-    throw Exception('Failed to load album');
-  }
-
-}
-
-Future<String> getAuthenticationToken() async {
-  try {
-    var authenticationToken = await SpotifySdk.getAuthenticationToken(
-        clientId: DotEnv().env['CLIENT_ID'].toString(),
-        redirectUrl: DotEnv().env['REDIRECT_URL'].toString(),
-        scope: 'app-remote-control, '
-            'user-modify-playback-state, '
-            'playlist-read-private, '
-            'playlist-modify-public,user-read-currently-playing');
-    return authenticationToken;
-  } on PlatformException catch (e) {
-    return Future.error('$e.code: $e.message');
-  } on MissingPluginException {
-    return Future.error('not implemented');
   }
 }
