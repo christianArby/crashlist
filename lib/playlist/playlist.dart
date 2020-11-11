@@ -53,8 +53,8 @@ class ReplaceTracksData {
   Map toJson() {
     return {
       'tempAuth': tempAuth,
-      'uris': jsonEncode(uris),
-      'orderArray': jsonEncode(orderArray),
+      'uris': uris,
+      'orderArray': orderArray,
     };
   }
 
