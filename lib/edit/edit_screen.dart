@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
+import 'package:crashlist/crashlist/crashlist_cubit.dart';
+import 'package:crashlist/crashlist/crashlist_screen.dart';
 import 'package:crashlist/crashlist/firebase_playlist.dart';
 import 'package:crashlist/edit/edit_cubit.dart';
 import 'package:crashlist/playlist/playlist.dart';
@@ -36,15 +38,19 @@ class _EditScreenState extends State<EditScreen> {
   final databaseReference = Firestore.instance;
 
   Widget _buildBody(BuildContext context) {
+    final crashListCubit = context.bloc<CrashlistCubit>();
     if (_firstTimeLoad) {
       final editCubit = context.bloc<EditCubit>();
       editCubit.updateEdit();
       _firstTimeLoad = false;
     }
 
-    return BlocConsumer<EditCubit, EditState>(listener: (context, state) {
+    return BlocConsumer<EditCubit, EditState>(
+      
+      listener: (context, state) {
       if (state is EditSaved) {
         Navigator.pop(context);
+        crashListCubit.updateCrashlist();
       }
     }, builder: (context, state) {
       if (state is EditInitial) {

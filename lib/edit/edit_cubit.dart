@@ -15,14 +15,12 @@ class EditCubit extends Cubit<EditState> {
       : super(EditInitial());
 
   void updateEdit() {
-    try {
-      emit(EditLoading());
-      firebaseRepository.fetchCurrentPlaylist().listen((firebasePlaylist) {
-        emit(EditLoaded(firebasePlaylist));
-      });
-    } on Exception {
-      // Do something
-    }
+
+    emit(EditLoading());
+    // TODO check if dispose is necessary
+    firebaseRepository.crashlistStream.listen((event) {
+      emit(EditLoaded(event));
+    });
   }
 
   Future<void> saveEdit(FirebasePlaylist firebasePlaylist) async {

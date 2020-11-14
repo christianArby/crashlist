@@ -11,13 +11,10 @@ class CrashlistCubit extends Cubit<CrashlistState> {
 
   void updateCrashlist() {
 
-    try {
-      emit(CrashlistLoading());
-      firebaseRepository.fetchCurrentPlaylist().listen((firebasePlaylist) { 
-        emit(CrashlistLoaded(firebasePlaylist));
-      });
-    } on Exception {
-      // Do something
-    }
+    emit(CrashlistLoading());
+    // TODO check if dispose is necessary
+    firebaseRepository.crashlistStream.listen((event) {
+      emit(CrashlistLoaded(event));
+    });
   }
 }

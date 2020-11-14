@@ -11,17 +11,7 @@ import 'package:spotify_sdk/spotify_sdk.dart';
 import 'firebase_playlist.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class CrashlistScreen extends StatefulWidget {
-  @override
-  _CrashlistScreenState createState() {
-    return _CrashlistScreenState();
-  }
-}
-
-class _CrashlistScreenState extends State<CrashlistScreen> {
-  bool _firstTimeLoad = true;
-  FirebasePlaylist firebasePlaylist;
-
+class CrashlistScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,7 +23,8 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
             context,
             MaterialPageRoute(builder: (context) => EditScreen()),
           ),
-          ),),
+        ),
+      ),
       body: _buildBody(context),
     );
   }
@@ -41,12 +32,9 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
   final databaseReference = Firestore.instance;
 
   Widget _buildBody(BuildContext context) {
-    if (_firstTimeLoad) {
-      connectToSpotifyRemote();
-      final crashlistCubit = context.bloc<CrashlistCubit>();
-      crashlistCubit.updateCrashlist();
-      _firstTimeLoad = false;
-    }
+    connectToSpotifyRemote();
+    final crashlistCubit = context.bloc<CrashlistCubit>();
+    crashlistCubit.updateCrashlist();
 
     return BlocBuilder<CrashlistCubit, CrashlistState>(
         builder: (context, state) {
@@ -55,21 +43,15 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
       } else if (state is CrashlistLoading) {
         return CircularProgressIndicator();
       } else if (state is CrashlistLoaded) {
-        Function eq = const ListEquality().equals;
-        if (!(eq(state.firebasePlaylist.orderArray,
-            firebasePlaylist?.orderArray))) {
-          firebasePlaylist = state.firebasePlaylist;
-        }
-        return _buildList(context);
+        return _buildList(context, state.firebasePlaylist);
       } else {
         return CircularProgressIndicator();
       }
     });
   }
 
-  Widget _buildList(BuildContext context) {
-    return ReorderableListView(
-      onReorder: _updatePlaylistOrder,
+  Widget _buildList(BuildContext context, FirebasePlaylist firebasePlaylist) {
+    return ListView(
       padding: const EdgeInsets.only(top: 20.0),
       children: firebasePlaylist.snapshotPlaylist
           .map((data) => _buildListItem(context, data))
@@ -80,13 +62,7 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     //CrashlistBloc bloc = FirebaseBlocProvider.of(context).bloc;
     final spotifyTrack = SpotifyTrack.fromSnapshot(data);
-    return Dismissible(
-      key: Key(spotifyTrack.name),
-      onDismissed: (direction) {
-        // TODO
-        //bloc.removeTrackFromPlaylist(data);
-      },
-      child: Padding(
+    return Padding(
         key: ValueKey(spotifyTrack.name),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Container(
@@ -100,41 +76,13 @@ class _CrashlistScreenState extends State<CrashlistScreen> {
             onTap: () => {play(spotifyTrack.uri)},
           ),
         ),
-      ),
-    );
+      );
   }
 
   Future<void> play(String spotifyTrackUri) async {
     try {
       await SpotifySdk.play(spotifyUri: spotifyTrackUri);
-    } on MissingPluginException {
-
-    }
-  }
-
-  void _updatePlaylistOrder(int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) {
-      newIndex -= 1;
-    }
-    var movedId = firebasePlaylist.orderArray[oldIndex];
-
-    firebasePlaylist.orderArray.removeAt(oldIndex);
-    firebasePlaylist.orderArray.insert(newIndex, movedId);
-
-    Firestore.instance
-        .collection('playlists')
-        .document("40znmRYsotw673C5LD4rrz")
-        .collection('meta')
-        .document('order')
-        .updateData({'orderArray': firebasePlaylist.orderArray})
-        .then((value) => print("User Updated"))
-        .catchError((error) => print("Failed to update user: $error"));
-
-    setState(() {
-      DocumentSnapshot movedSnap = firebasePlaylist.snapshotPlaylist[oldIndex];
-      firebasePlaylist.snapshotPlaylist.removeAt(oldIndex);
-      firebasePlaylist.snapshotPlaylist.insert(newIndex, movedSnap);
-    });
+    } on MissingPluginException {}
   }
 }
 

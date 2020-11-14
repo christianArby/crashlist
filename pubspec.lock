@@ -180,7 +180,7 @@ packages:
       name: flutter_bloc
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "6.0.6"
+    version: "6.1.1"
   flutter_dotenv:
     dependency: "direct main"
     description:
@@ -288,7 +288,14 @@ packages:
       name: quiver
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.4+1"
+    version: "2.1.5"
+  rxdart:
+    dependency: "direct main"
+    description:
+      name: rxdart
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.24.1"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -306,7 +313,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "5d87a1f78dde30f47a39e538de703a11edd30960"
+      resolved-ref: a6d9f2010294477b4d452636029c4cf05c3bccc5
       url: "https://github.com/brim-borium/spotify_sdk.git"
     source: git
     version: "1.0.0"
@@ -331,6 +338,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.5"
+  synchronized:
+    dependency: transitive
+    description:
+      name: synchronized
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.2.0+2"
   term_glyph:
     dependency: transitive
     description:

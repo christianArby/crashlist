@@ -19,6 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firebaseRepository = FirebaseRepository();
+    firebaseRepository.init();
     final spotifyRepository = SpotifyRepository();
 
     return MultiBlocProvider(

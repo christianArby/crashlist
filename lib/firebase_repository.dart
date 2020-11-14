@@ -1,13 +1,29 @@
-import 'package:async/async.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'crashlist/firebase_playlist.dart';
+import 'package:rxdart/rxdart.dart';
+
 
 class FirebaseRepository {
   QuerySnapshot querySnapshot;
   FirebasePlaylist firebasePlaylist;
 
-  Stream<FirebasePlaylist> fetchCurrentPlaylist() {
+  // 1
+  final _crashlistController = BehaviorSubject<FirebasePlaylist>();
+  BehaviorSubject<FirebasePlaylist> get crashlistStream => _crashlistController.stream;
+
+
+
+  void init() {
+
+    listenToCrashlist().listen((event) {
+      _crashlistController.sink.add(event);
+    });
+  }
+
+  Stream<FirebasePlaylist> listenToCrashlist () {
+
     Stream<DocumentSnapshot> orderStream = Firestore.instance
         .collection('playlists')
         .document("40znmRYsotw673C5LD4rrz")
@@ -21,8 +37,9 @@ class FirebaseRepository {
         .collection("tracks")
         .snapshots();
 
-    return StreamZip([orderStream, playlistStream])
-        .map((event) => updatePlaylist(event[0], event[1]));
+
+    return Rx.combineLatest2(orderStream, playlistStream, (a, b) => 
+    updatePlaylist(a, b));
   }
 
   FirebasePlaylist updatePlaylist(
@@ -55,5 +72,9 @@ class FirebaseRepository {
       }
     }
     return equal;
+  }
+
+  void dispose() {
+    _crashlistController.close();
   }
 }
