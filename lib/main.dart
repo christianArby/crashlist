@@ -1,7 +1,7 @@
 import 'package:crashlist/crashlist/crashlist_cubit.dart';
-import 'package:crashlist/edit/edit_cubit.dart';
 import 'package:crashlist/list/list_cubit.dart';
 import 'package:crashlist/firebase_repository.dart';
+import 'package:crashlist/player_repository.dart';
 import 'package:crashlist/playlist/playlist_cubit.dart';
 import 'package:crashlist/spotify_repository.dart';
 import 'package:flutter/material.dart';
@@ -21,13 +21,13 @@ class MyApp extends StatelessWidget {
     final firebaseRepository = FirebaseRepository();
     firebaseRepository.init();
     final spotifyRepository = SpotifyRepository();
+    final playerRepository = PlayerRepository(firebaseRepository, spotifyRepository);
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (context) => CrashlistCubit(firebaseRepository)),
+        BlocProvider(create: (context) => CrashlistCubit(firebaseRepository, playerRepository)),
         BlocProvider(create: (context) => ListCubit(spotifyRepository)),
-        BlocProvider(create: (context) => EditCubit(firebaseRepository, spotifyRepository)),
-        BlocProvider(create: (context) => PlaylistCubit(spotifyRepository)),
+        BlocProvider(create: (context) => PlaylistCubit(spotifyRepository, firebaseRepository)),
       ],
       child: MaterialApp(
         title: 'Crashlist',

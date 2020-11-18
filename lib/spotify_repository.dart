@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:crashlist/crashlist/firebase_playlist.dart';
 import 'package:crashlist/playlist/playlist.dart';
 import 'package:crashlist/list/playlist_minimal.dart';
 import 'package:crashlist/list/playlists.dart';
@@ -9,6 +8,7 @@ import 'package:spotify_sdk/spotify_sdk.dart';
 import 'package:http/http.dart' as http;
 
 class SpotifyRepository {
+
   Future<Playlists> fetchMyPlaylists() {
     return getAuthenticationToken().then((authToken) {
       return fetchMyPlaylistsFuture(authToken)
@@ -101,67 +101,16 @@ class SpotifyRepository {
       return Future.error('not implemented');
     }
   }
-
-  Future<bool> replaceTracks(FirebasePlaylist firebasePlaylist) async {
-    return getAuthenticationToken().then((authToken) {
-      return replaceTracksFuture(firebasePlaylist, authToken)
-          .then((bool success) {
-        return success;
-      });
-    }, onError: (e) {
-      throw Exception('Failed to load playlists');
-    });
-  }
-
-  Future<bool> replaceTracksFuture(FirebasePlaylist firebasePlaylist, String tempAuth) async {
-    final List<String> uris = firebasePlaylist.snapshotPlaylist
-        .map((e) => SpotifyTrack.fromSnapshot(e).uri)
-        .toList();
-    final replaceData = ReplaceTracksData(tempAuth, uris, firebasePlaylist.orderArray);
-
-    var url =
-        'https://us-central1-crashlist-6a66c.cloudfunctions.net/widgets/replaceTracksInSpotify';
-
-    Map data = replaceData.toJson();
-    var body = json.encode(data);
-
-
-    var response = await http.post(url,
-        headers: {"Content-Type": "application/json"}, body: body);
-    if (response.statusCode == 200) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<bool> addTrackFuture(AddTrackData addTrackData) async {
-    var url =
-        'https://us-central1-crashlist-6a66c.cloudfunctions.net/widgets/addTrackToSpotifyListHttp';
-
-    Map data = addTrackData.toJson();
-    var body = json.encode(data);
-
-    var response = await http.post(url,
-        headers: {"Content-Type": "application/json"}, body: body);
-  
-    if (response.statusCode == 200) {
-      return true;
-    } else {
-      return false;
-    }
-  }
 }
 
 class AddTrackData {
   String playlistId;
   SpotifyTrack spotifyTrack;
-  String tempAuth;
 
-  AddTrackData(this.playlistId, this.spotifyTrack, this.tempAuth);
+  AddTrackData(this.playlistId, this.spotifyTrack);
 
   Map<String, dynamic> toJson() =>
-      {'playlistId': playlistId, 'spotifyTrack': spotifyTrack.toJson(), 'tempAuth': tempAuth};
+      {'playlistId': playlistId, 'spotifyTrack': spotifyTrack.toJson()};
 }
 
 class PlaylistData {

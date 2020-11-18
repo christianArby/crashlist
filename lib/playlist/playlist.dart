@@ -57,6 +57,4 @@ class ReplaceTracksData {
       'orderArray': orderArray,
     };
   }
-
-
 }

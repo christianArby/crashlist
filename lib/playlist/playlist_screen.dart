@@ -64,7 +64,7 @@ class PlaylistScreen extends StatelessWidget {
           title: Text(spotifyTrack.name),
           value: true,
           onChanged: (bool value) {
-            playlistCubit.addTrackToQueue(AddTrackData('40znmRYsotw673C5LD4rrz', spotifyTrack, tempAuth));
+            playlistCubit.addTrackToFirebase(AddTrackData('40znmRYsotw673C5LD4rrz', spotifyTrack));
           },
         ),
       ),
