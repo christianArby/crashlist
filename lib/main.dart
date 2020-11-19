@@ -2,6 +2,8 @@ import 'package:crashlist/crashlist/crashlist_cubit.dart';
 import 'package:crashlist/list/list_cubit.dart';
 import 'package:crashlist/firebase_repository.dart';
 import 'package:crashlist/player_repository.dart';
+import 'package:crashlist/player_view/player_view_cubit.dart';
+import 'package:crashlist/player_view/player_view_screen.dart';
 import 'package:crashlist/playlist/playlist_cubit.dart';
 import 'package:crashlist/spotify_repository.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +30,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => CrashlistCubit(firebaseRepository, playerRepository)),
         BlocProvider(create: (context) => ListCubit(spotifyRepository)),
         BlocProvider(create: (context) => PlaylistCubit(spotifyRepository, firebaseRepository)),
+        BlocProvider(create: (context) => PlayerViewCubit()),
       ],
       child: MaterialApp(
         title: 'Crashlist',
@@ -45,12 +48,12 @@ class BottomBar extends StatefulWidget {
   _BottomBarState createState() => _BottomBarState();
 }
 
-/// This is the private State class that goes with MyStatefulWidget.
+/// This is the private State class that goes with MyStatefulWidget._widgetOptions.elementAt(_selectedIndex)
 class _BottomBarState extends State<BottomBar> {
   int _selectedIndex = 0;
   static List<Widget> _widgetOptions = <Widget>[
     CrashlistScreen(),
-    ListScreen()
+    ListScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -62,9 +65,17 @@ class _BottomBarState extends State<BottomBar> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
+      body: Stack(children: <Widget>[
+        Center(
+          child: _widgetOptions.elementAt(_selectedIndex),
+        ),
+        Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: PlayerViewScreen()
+        ),
+      ]),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

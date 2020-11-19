@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:crashlist/firebase_repository.dart';
 import 'package:crashlist/spotify_repository.dart';
 import 'package:flutter/services.dart';
+import 'package:spotify_sdk/models/player_state.dart';
 import 'package:spotify_sdk/spotify_sdk.dart';
 
 
@@ -12,6 +13,18 @@ class PlayerRepository {
   final SpotifyRepository spotifyRepository;
   Timer timer;
   PlayerRepository(this.firebaseRepository, this.spotifyRepository);
+  PlayerState playerState;
+
+  void init() {
+    SpotifySdk.subscribePlayerState().listen((event) {
+      playerState = event;
+    });
+
+  }
+
+
+
+
 
   void play(String playUri) {
     var firebasePlaylist = firebaseRepository.firebasePlaylist;
