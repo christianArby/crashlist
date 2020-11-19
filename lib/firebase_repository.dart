@@ -11,8 +11,7 @@ class FirebaseRepository {
 
   // 1
   final _crashlistController = BehaviorSubject<FirebasePlaylist>();
-  BehaviorSubject<FirebasePlaylist> get crashlistStream =>
-      _crashlistController.stream;
+  BehaviorSubject<FirebasePlaylist> get crashlistStream => _crashlistController.stream;
 
   void init() {
     listenToCrashlist().listen((event) {
