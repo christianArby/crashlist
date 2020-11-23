@@ -33,8 +33,11 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => PlayerViewCubit()),
       ],
       child: MaterialApp(
+
         title: 'Crashlist',
+
         home: BottomBar(),
+        theme: ThemeData.dark(),
       ),
     );
   }
